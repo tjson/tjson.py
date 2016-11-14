@@ -1,16 +1,18 @@
-import inspect
 import re, sys, base64
 from lib.Exceptions import *
-from datetime import datetime, tzinfo, timedelta
+import datetime
+from datetime import tzinfo, timedelta
 import dateutil.parser
+from lib.tjson import *
+
 
 class Datatype:
-
     # Initializer, will be overriden below
     TAGS = {}
     isScalar = re.compile(r'^[a-z0-9]*$')
     isBin = re.compile('^[01]{8}$')
     isOnlyNumbers = re.compile('^\-?(0|[1-9][0-9]*)$')
+    isNonScalar = re.compile(r'^([A-Z][a-z0-9]*)\<(.*)\>$')
 
     @staticmethod
     def parse(tag):
@@ -21,45 +23,51 @@ class Datatype:
         if tag == "O":
             # Object
             return Datatype.TAGS[tag]
-        elif Datatype.isScalar.match(tag):
 
+        elif Datatype.isNonScalar.match(tag):
+            tmp_inner = Datatype.isNonScalar.match(tag).group(2)
+            tmp_type = Datatype.isNonScalar.match(tag).group(1)
+            inner = Datatype.parse(tmp_inner)
+
+            if tmp_type == "A":
+                tmp = Array(inner)
+            else:
+                tmp = Datatype.TAGS[tmp_type]
+
+            return tmp
+        elif Datatype.isScalar.match(tag):
             # Scalar
             return Datatype.TAGS[tag]
 
-    def _check_if_base_encodings(self,obj):
+    def _check_if_base_encodings(self, obj):
         pass
 
     @staticmethod
-    def identify_type(obj, isUnicode):
-
+    def identify_type(obj, is_unicode):
 
         if type(obj) is dict:
             return Datatype.TAGS["O"]
+        elif type(obj) is list:
+            t = Array(None)
+            return t._identify_type(obj)
         elif isinstance(obj, (str)):
             return Datatype.TAGS["s"]
         elif type(obj) is int:
             return Datatype.TAGS["i"]
         elif type(obj) is float:
             return Datatype.TAGS["f"]
-        # elif type(obj, datetime):
-        #     return Datatype.TAGS["t"]
-        elif isUnicode:
+        elif isinstance(obj, datetime.datetime):
+            return Datatype.TAGS["t"]
+        elif is_unicode:
             return Datatype.TAGS["b"]
 
-      #when ::Array            then TJSON::DataType::Array.identify_type(obj)
-      #when ::String, Symbol   then obj.encoding == Encoding::BINARY ? self["b"] : self["s"]
-      #when ::Time, ::DateTime then self["t"]
         else:
             raise TypeError("don't know how to serialize #{obj.class} as TJSON")
 
-
     def datatype_generate(self, obj):
 
-        isUnicode = False if not isinstance(obj, unicode) else True
-        print self.identify_type(obj, isUnicode).generate(obj)
-
-        sys.exit()
-        return self.identify_type(obj, isUnicode).generate(obj)
+        is_unicode = False if not isinstance(obj, unicode) else True
+        return self.identify_type(obj, is_unicode).generate(obj)
 
 
 class Scalar(Datatype):
@@ -86,7 +94,6 @@ class Number(Scalar):
 
 
 class String(Scalar):
-
     @staticmethod
     def tag():
         return "s"
@@ -101,40 +108,40 @@ class String(Scalar):
         except UnicodeError:
             raise EncodingError("expected UTF-8, got #{str.encoding.inspect}")
 
-        return str_data
+        return str_data.encode("utf-8")
 
     @staticmethod
     def generate(obj):
-        return str(obj)
+        return str(obj).encode("utf-8")
 
 
 class simple_utc(tzinfo):
     def tzname(self):
         return "UTC"
+
     def utcoffset(self, dt):
         return timedelta(0)
 
 
 class Timestamp(Scalar):
+    @staticmethod
+    def tag():
+        return "t"
 
-        @staticmethod
-        def tag():
-            return "t"
+    @staticmethod
+    def convert(str_data):
+        if not isinstance(str_data, (str, unicode)):
+            raise TypeError("expected String, got #{str.class}: #{str.inspect}")
 
-        @staticmethod
-        def convert(str_data):
-            if not isinstance(str_data, (str, unicode)):
-                raise TypeError("expected String, got #{str.class}: #{str.inspect}")
+        pattern = re.compile(r'^\d{4}-\d{2}-\d{2}[T]\d{2}:\d{2}:\d{2}Z$')
+        if not pattern.match(str_data):
+            raise ParseError("invalid timestamp: #{str.inspect}")
 
-            pattern = re.compile(r'^\d{4}-\d{2}-\d{2}[T]\d{2}:\d{2}:\d{2}Z$')
-            if not pattern.match(str_data):
-                raise ParseError("invalid timestamp: #{str.inspect}")
+        return dateutil.parser.parse(str_data)
 
-            return dateutil.parser.parse(str_data)
-
-        @staticmethod
-        def generate(timestamp):
-            return datetime.utcfromtimestamp(timestamp).replace(tzinfo=simple_utc()).isoformat().split("+")[0] + "Z"
+    @staticmethod
+    def generate(timestamp):
+        return timestamp.replace(tzinfo=simple_utc()).isoformat().split("+")[0] + "Z"
 
 
 class Float(Number):
@@ -158,7 +165,7 @@ class Integer:
     @staticmethod
     def generate(int_data):
         # Integers are serialized as strings to sidestep the limits of some JSON parsers
-        return str(int_data)
+        return str(int_data).encode("utf-8")
 
 
 class SignedInt(Integer):
@@ -168,8 +175,7 @@ class SignedInt(Integer):
 
     @staticmethod
     def convert(str_data):
-        print type(str_data)
-
+        str_data = str_data.encode("utf-8")
         if type(str_data) is not str:
             raise TypeError("expected String, got {} : {}".format(type(str_data), repr(str_data)))
 
@@ -209,21 +215,44 @@ class UnsignedInt(Integer):
 class Array(NonScalar):
     # Determine the type of a Ruby array (for serialization)
 
-    @staticmethod
-    def identify_type(array):
-        inner_type = None
+    def __init__(self, inner_type):
+        NonScalar.__init__(self, inner_type)
+        self.inner_type = inner_type
+
+    def _identify_type(self, array):
+
+        self.inner_type = None
 
         for elem in array:
-            t = Datatype.identify_type(elem)
-            inner_type = (inner_type if not None else t)
-            if inner_type != t:
+            is_unicode = False if not isinstance(elem, unicode) else True
+            t = Datatype.identify_type(elem, is_unicode)
+            self.inner_type = (self.inner_type if self.inner_type is not None else t)
+
+            if self.inner_type.__class__ != t.__class__:
                 raise TypeError("array contains heterogenous types: #{array.inspect}")
 
-        return inner_type
+        return Array(self.inner_type)
+
+    def tag(self):
+        return "A<{}>".format(self.inner_type.tag())
+
+    def convert(self, array):
+
+        if type(array) is not list:
+            raise
+
+        for key, val in enumerate(array):
+            array[key] = self.inner_type.convert(val)
+
+        return array
 
     @staticmethod
-    def tag():
-        return "A<#{@inner_type.tag}>"
+    def generate(array):
+        for key, val in enumerate(array):
+            tmp = Datatype()
+            array[key] = tmp.datatype_generate(val)
+
+        return array
 
 
 class Binary(Scalar):
@@ -231,35 +260,33 @@ class Binary(Scalar):
 
 
 class Binary16(Binary):
+    @staticmethod
+    def tag():
+        return "b16"
 
-        @staticmethod
-        def tag():
-            return "b16"
+    @staticmethod
+    def convert(str_data):
 
-        @staticmethod
-        def convert(str_data):
+        if not isinstance(str_data, (str, unicode)):
+            raise TypeError("expected String, got #{str.class}: #{str.inspect}")
 
-            if not isinstance(str_data, (str, unicode)):
-                raise TypeError("expected String, got #{str.class}: #{str.inspect}")
+        if all(x.isupper() for x in str_data):
+            raise ParseError("base16 must be lower case: {}".format(repr(str_data)))
 
-            if all(x.isupper() for x in str_data):
-                raise ParseError("base16 must be lower case: {}".format(repr(str_data)))
+        if all(x.islower() for x in str_data) and all(x.isdigit() for x in str_data):
+            raise ParseError("invalid base16: {}".format(repr(str_data)))
 
-            if all(x.islower() for x in str_data) and all(x.isdigit() for x in str_data):
-                raise ParseError("invalid base16: {}".format(repr(str_data)))
+        if "=" in str_data:
+            raise ParseError("padding disallowed: {}".format(str_data))
 
-            if "=" in str_data:
-                raise ParseError("padding disallowed: {}".format(str_data))
+        return base64.b16decode(str_data.upper())
 
-            return base64.b16decode(str_data.upper())
-
-        @staticmethod
-        def generate(str_data):
-            return base64.b16encode(str_data).lower().replace("=", "")
+    @staticmethod
+    def generate(str_data):
+        return base64.b16encode(str_data).lower().replace("=", "").encode("utf-8")
 
 
 class Binary32(Binary):
-
     @staticmethod
     def tag():
         return "b32"
@@ -267,7 +294,7 @@ class Binary32(Binary):
     @staticmethod
     def convert(str_data):
         if not isinstance(str_data, (str, unicode)):
-                raise TypeError("expected String, got {}: {}".format(type(str_data), str_data))
+            raise TypeError("expected String, got {}: {}".format(type(str_data), str_data))
 
         if all(x.isupper() for x in str_data):
             raise ParseError("base32 must be lower case: {}".format(repr(str_data)))
@@ -286,7 +313,6 @@ class Binary32(Binary):
 
 
 class Binary64(Binary):
-
     @staticmethod
     def tag():
         return "b64"
@@ -313,16 +339,14 @@ class Binary64(Binary):
 
 
 class Object(NonScalar):
-
     @staticmethod
     def tag():
         return "O"
 
     @staticmethod
     def convert(obj):
-        if not inspect.isclass(obj):
-            raise TypeError("expected TJSON::Object, got #{obj.class}")
-
+        if str(obj.__class__) != "<class '__main__.object'>":
+            raise TypeError("expected TJSON::Object, got {}".format(obj))
         return obj
 
     @staticmethod
@@ -334,20 +358,16 @@ class Object(NonScalar):
             if not isinstance(key, str):
                 raise TypeError
 
-            isUnicode = False if not isinstance(val, unicode) else True
-
-            the_type = Datatype.identify_type(val, isUnicode)
-
+            is_unicode = False if not isinstance(val, unicode) else True
+            the_type = Datatype.identify_type(val, is_unicode)
             temp_dict[key + ":" + the_type.tag()] = the_type.generate(val)
 
         return temp_dict
 
+
 class Datatype(Datatype):
-
     Datatype.TAGS = {
-
         "O": Object(None),
-        #"A": Array(),
         "b": Binary64(),
         "b16": Binary16(),
         "b32": Binary32(),

@@ -69,6 +69,6 @@ if __name__ == "__main__":
     s = tjson()
 
     # print s.parse('{"example:A<O>": [{"b:i": "1"}, {"c:i": "2"}]}'.encode("utf-8"))
-    # print s.parse('{"nested-array:A<A<s>>": [["Nested"], ["Array!"]]}')
-    print s.generate({"array-example" : [{"string-example" : "foobar", "binary-example": unicode("BINARY"), "float-example": 0.42, "int-example": 42, "timestamp-example": datetime.datetime.now()}]})
+    print s.parse('{"nested-array:A<A<s>>": [["Nested"], ["Array!"]]}')
+    # print s.generate({"array-example" : [{"string-example" : "foobar", "binary-example": unicode("BINARY"), "float-example": 0.42, "int-example": 42, "timestamp-example": datetime.datetime.now()}]})
 
