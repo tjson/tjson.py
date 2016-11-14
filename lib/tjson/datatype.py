@@ -26,6 +26,40 @@ class Datatype:
             # Scalar
             return Datatype.TAGS[tag]
 
+    def _check_if_base_encodings(self,obj):
+        pass
+
+    @staticmethod
+    def identify_type(obj, isUnicode):
+
+
+        if type(obj) is dict:
+            return Datatype.TAGS["O"]
+        elif isinstance(obj, (str)):
+            return Datatype.TAGS["s"]
+        elif type(obj) is int:
+            return Datatype.TAGS["i"]
+        elif type(obj) is float:
+            return Datatype.TAGS["f"]
+        # elif type(obj, datetime):
+        #     return Datatype.TAGS["t"]
+        elif isUnicode:
+            return Datatype.TAGS["b"]
+
+      #when ::Array            then TJSON::DataType::Array.identify_type(obj)
+      #when ::String, Symbol   then obj.encoding == Encoding::BINARY ? self["b"] : self["s"]
+      #when ::Time, ::DateTime then self["t"]
+        else:
+            raise TypeError("don't know how to serialize #{obj.class} as TJSON")
+
+
+    def datatype_generate(self, obj):
+
+        isUnicode = False if not isinstance(obj, unicode) else True
+        print self.identify_type(obj, isUnicode).generate(obj)
+
+        sys.exit()
+        return self.identify_type(obj, isUnicode).generate(obj)
 
 
 class Scalar(Datatype):
@@ -53,10 +87,12 @@ class Number(Scalar):
 
 class String(Scalar):
 
-    def tag(self):
+    @staticmethod
+    def tag():
         return "s"
 
-    def convert(self, str_data):
+    @staticmethod
+    def convert(str_data):
         if not isinstance(str_data, (str, unicode)):
             raise TypeError("expected String, got #{str.class}: #{str.inspect}")
 
@@ -67,7 +103,8 @@ class String(Scalar):
 
         return str_data
 
-    def generate(self, obj):
+    @staticmethod
+    def generate(obj):
         return str(obj)
 
 
@@ -121,7 +158,7 @@ class Integer:
     @staticmethod
     def generate(int_data):
         # Integers are serialized as strings to sidestep the limits of some JSON parsers
-        str(int_data)
+        return str(int_data)
 
 
 class SignedInt(Integer):
@@ -218,7 +255,7 @@ class Binary16(Binary):
 
         @staticmethod
         def generate(str_data):
-            base64.b16encode(str_data).lower().replace("=", "")
+            return base64.b16encode(str_data).lower().replace("=", "")
 
 
 class Binary32(Binary):
@@ -272,13 +309,13 @@ class Binary64(Binary):
 
     @staticmethod
     def generate(binary):
-        base64.urlsafe_b64encode(binary).replace("=", "").encode("utf-8")
+        return base64.urlsafe_b64encode(binary).replace("=", "").encode("utf-8")
 
 
 class Object(NonScalar):
 
     @staticmethod
-    def tag(self):
+    def tag():
         return "O"
 
     @staticmethod
@@ -288,11 +325,28 @@ class Object(NonScalar):
 
         return obj
 
+    @staticmethod
+    def generate(obj):
+        temp_dict = {}
+
+        for key, val in obj.iteritems():
+
+            if not isinstance(key, str):
+                raise TypeError
+
+            isUnicode = False if not isinstance(val, unicode) else True
+
+            the_type = Datatype.identify_type(val, isUnicode)
+
+            temp_dict[key + ":" + the_type.tag()] = the_type.generate(val)
+
+        return temp_dict
+
 class Datatype(Datatype):
 
     Datatype.TAGS = {
 
-        "O": "Object()",
+        "O": Object(None),
         #"A": Array(),
         "b": Binary64(),
         "b16": Binary16(),

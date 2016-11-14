@@ -40,8 +40,15 @@ class tjson:
         object.loads(utf8_string)
         return object
 
+    def generate(self, dict_string):
+
+        if type(dict_string) is not dict:
+            raise TypeError
+        tmp = Datatype()
+        return tmp.datatype_generate(dict_string)
+
 
 if __name__ == "__main__":
 
     s = tjson()
-    print s.parse('{"example:b":"SGVsbG8sIHdvcmxkIQ"}')
+    print s.generate({"example": -520.0524})
