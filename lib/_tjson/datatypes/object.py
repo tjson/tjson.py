@@ -1,4 +1,4 @@
-from lib2._tjson.datatype import NonScalar, Datatype
+from lib._tjson.datatype import NonScalar, Datatype
 
 
 class Object(NonScalar):

@@ -12,12 +12,6 @@ class tjson:
         def __init__(self, **kwargs):
             super(tjson.object, self).__init__(**kwargs)
 
-        def loads(self, json_string):
-            if type(json_string) is not str:
-                raise TypeError("Not a string error.")
-
-            json.loads(json_string, object_hook=self.object_decoder)
-
     def object_decoder(self, obj):
             # print "--" , obj
             tmp = tjson.object()
@@ -45,13 +39,10 @@ class tjson:
         except:
             raise EncodingError("Encoding error.")
 
-        print json.loads(utf8_string, object_hook=self.object_decoder)
+        if type(utf8_string) is not str:
+            raise TypeError("Not a string error.")
 
-        sys.exit()
-
-        object = self.object()
-        object.loads(utf8_string)
-        return object
+        return json.loads(utf8_string, object_hook=self.object_decoder)
 
     def generate(self, dict_string):
 
@@ -59,13 +50,3 @@ class tjson:
             raise TypeError
         tmp = Datatype()
         return tmp.datatype_generate(dict_string)
-
-
-if __name__ == "__main__":
-
-    s = tjson()
-
-    # print s.parse('{"example:A<O>": [{"b:i": "1"}, {"c:i": "2"}]}'.encode("utf-8"))
-    # print s.parse('{"nested-array:A<A<s>>": [["Nested"], ["Array!"]]}')
-    print s.generate({"array-example" : [{"string-example" : "foobar", "binary-example": unicode("BINARY"), "float-example": 0.42, "int-example": 42, "timestamp-example": datetime.datetime.now()}]})
-

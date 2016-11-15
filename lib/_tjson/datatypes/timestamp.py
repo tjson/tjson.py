@@ -1,5 +1,5 @@
 from datetime import tzinfo, timedelta
-from lib2._tjson.datatype import Scalar
+from lib._tjson.datatype import Scalar
 
 
 

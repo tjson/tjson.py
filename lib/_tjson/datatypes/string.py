@@ -1,4 +1,4 @@
-from lib2._tjson.datatype import Scalar
+from lib._tjson.datatype import Scalar
 
 class String(Scalar):
     @staticmethod
