@@ -1,5 +1,6 @@
 import re, datetime
 from Helpers.freezable_list import FrozenDict
+from lib.Exceptions import ParseError
 
 class Datatype:
     # Initializer, will be overriden below
@@ -32,9 +33,8 @@ class Datatype:
         elif Datatype.isScalar.match(tag):
             # Scalar
             return Datatype.TAGS[tag]
-
-    def _check_if_base_encodings(self, obj):
-        pass
+        else:
+            raise ParseError("couldn't parse tag: {}".format(repr(tag)))
 
     @staticmethod
     def identify_type(obj, is_bytes):
@@ -72,10 +72,6 @@ class Scalar(Datatype):
 class NonScalar(Datatype):
     def __init__(self, inner_type):
         self.inner_type = inner_type
-
-    @staticmethod
-    def inspect():
-        return "#<#{self.class}<#{@inner_type.inspect}>>"
 
     @staticmethod
     def isScalar():
