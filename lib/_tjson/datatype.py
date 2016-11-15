@@ -1,5 +1,5 @@
 import re, datetime
-
+from Helpers.freezable_list import FrozenDict
 
 class Datatype:
     # Initializer, will be overriden below
@@ -23,13 +23,12 @@ class Datatype:
             tmp_inner = Datatype.isNonScalar.match(tag).group(2)
             tmp_type = Datatype.isNonScalar.match(tag).group(1)
             inner = Datatype.parse(tmp_inner)
-
             if tmp_type == "A":
                 tmp = Array(inner)
             else:
                 tmp = Datatype.TAGS[tmp_type]
-
             return tmp
+
         elif Datatype.isScalar.match(tag):
             # Scalar
             return Datatype.TAGS[tag]
@@ -38,7 +37,7 @@ class Datatype:
         pass
 
     @staticmethod
-    def identify_type(obj, is_unicode):
+    def identify_type(obj, is_bytes):
 
         if type(obj) is dict:
             return Datatype.TAGS["O"]
@@ -53,17 +52,15 @@ class Datatype:
             return Datatype.TAGS["f"]
         elif isinstance(obj, datetime.datetime):
             return Datatype.TAGS["t"]
-        elif is_unicode:
+        elif is_bytes:
             return Datatype.TAGS["b"]
 
         else:
             raise TypeError("don't know how to serialize #{obj.class} as TJSON")
 
     def datatype_generate(self, obj):
-
-        is_unicode = False if not isinstance(obj, unicode) else True
-        return self.identify_type(obj, is_unicode).generate(obj)
-
+        is_bytes = False if not isinstance(obj, bytes) else True
+        return self.identify_type(obj, is_bytes).generate(obj)
 
 
 class Scalar(Datatype):
@@ -84,6 +81,7 @@ class NonScalar(Datatype):
     def isScalar():
         return False
 
+
 class Number(Scalar):
     pass
 
@@ -93,6 +91,7 @@ class Integer:
     def generate(int_data):
         # Integers are serialized as strings to sidestep the limits of some JSON parsers
         return str(int_data).encode("utf-8")
+
 
 class Binary(Scalar):
     pass
@@ -108,15 +107,15 @@ from datatypes.object import Object
 
 
 class Datatype(Datatype):
-    Datatype.TAGS = {
-        "O": Object(None),
-        "b": Binary64(),
-        "b16": Binary16(),
-        "b32": Binary32(),
-        "b64": Binary64(),
-        "f": Float(),
-        "i": SignedInt(),
-        "s": String(),
-        "t": Timestamp(),
-        "u": UnsignedInt()
-    }
+    Datatype.TAGS = FrozenDict(
+        O = Object(None),
+        b = Binary64(),
+        b16 = Binary16(),
+        b32 = Binary32(),
+        b64 = Binary64(),
+        f = Float(),
+        i = SignedInt(),
+        s =  String(),
+        t = Timestamp(),
+        u = UnsignedInt()
+    )

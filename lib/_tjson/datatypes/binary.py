@@ -12,7 +12,7 @@ class Binary16(Binary):
     def convert(str_data):
 
         if not isinstance(str_data, (str, unicode)):
-            raise TypeError("expected String, got #{str.class}: #{str.inspect}")
+            raise TypeError("expected String, got {}: {}".format(type(str_data), repr(str_data)))
 
         if all(x.isupper() for x in str_data):
             raise ParseError("base16 must be lower case: {}".format(repr(str_data)))
@@ -27,7 +27,7 @@ class Binary16(Binary):
 
     @staticmethod
     def generate(str_data):
-        return base64.b16encode(str_data).lower().replace("=", "").encode("utf-8")
+        return base64.b16encode(str_data).lower().replace("=", "").encode("ascii")
 
 
 class Binary32(Binary):
@@ -53,7 +53,7 @@ class Binary32(Binary):
 
     @staticmethod
     def generate(binary):
-        return base64.b32encode(binary).lower().replace("=", "")
+        return base64.b32encode(binary).lower().replace("=", "").encode("ascii")
 
 
 class Binary64(Binary):
@@ -79,4 +79,4 @@ class Binary64(Binary):
 
     @staticmethod
     def generate(binary):
-        return base64.urlsafe_b64encode(binary).replace("=", "").encode("utf-8")
+        return base64.urlsafe_b64encode(binary).replace("=", "").encode("ascii")

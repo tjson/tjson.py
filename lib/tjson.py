@@ -12,8 +12,8 @@ class tjson:
         def __init__(self, **kwargs):
             super(tjson.object, self).__init__(**kwargs)
 
-    def object_decoder(self, obj):
-
+    @staticmethod
+    def object_decoder(obj):
             newobject = tjson.object()
             for key, val in obj.iteritems():
                 if not tjson.re_name_check.match(key):
@@ -37,9 +37,12 @@ class tjson:
 
         return json.loads(utf8_string, object_hook=self.object_decoder)
 
-    def generate(self, dict_string):
+    @staticmethod
+    def generate(dict_string):
 
         if type(dict_string) is not dict:
             raise TypeError
         tmp = Datatype()
         return tmp.datatype_generate(dict_string)
+
+
