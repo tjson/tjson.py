@@ -1,11 +1,8 @@
-
 # -*- encoding: utf-8 -*-
 
-import inspect, datetime
-import json, sys, re
+import datetime, json, sys, re
 from _tjson.datatype import Datatype
-from Exceptions import *
-from random import randint
+from Exceptions import EncodingError, ParseError
 
 class tjson:
 
