@@ -18,7 +18,7 @@ class tjson:
             for key, val in obj.iteritems():
 
                 if not tjson.re_name_check.match(key):
-                    raise ParseError("Invalid tag: {}".format(repr(name)))
+                    raise ParseError("Invalid tag: {}".format(repr(key)))
 
                 name = tjson.re_name_check.match(key).group(1).encode("utf-8")
                 if name in newobject:
