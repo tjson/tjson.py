@@ -37,7 +37,7 @@ class Datatype:
             raise ParseError("couldn't parse tag: {}".format(repr(tag)))
 
     @staticmethod
-    def identify_type(obj, is_bytes):
+    def identify_type(obj, is_unicode):
 
         if type(obj) is dict:
             return Datatype.TAGS["O"]
@@ -52,15 +52,15 @@ class Datatype:
             return Datatype.TAGS["f"]
         elif isinstance(obj, datetime.datetime):
             return Datatype.TAGS["t"]
-        elif is_bytes:
+        elif is_unicode:
             return Datatype.TAGS["b"]
 
         else:
             raise TypeError("don't know how to serialize #{obj.class} as TJSON")
 
     def datatype_generate(self, obj):
-        is_bytes = False if not isinstance(obj, bytes) else True
-        return self.identify_type(obj, is_bytes).generate(obj)
+        is_unicode = False if not isinstance(obj, unicode) else True
+        return self.identify_type(obj, is_unicode).generate(obj)
 
 
 class Scalar(Datatype):
