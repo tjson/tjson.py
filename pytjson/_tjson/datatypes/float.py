@@ -1,4 +1,4 @@
-from lib._tjson.datatype import Number
+from pytjson._tjson.datatype import Number
 
 
 class Float(Number):

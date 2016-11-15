@@ -1,6 +1,6 @@
 import sys
-from lib.Exceptions import ParseError
-from lib._tjson.datatype import Integer, Datatype
+from pytjson.Exceptions import ParseError
+from pytjson._tjson.datatype import Integer, Datatype
 
 
 class SignedInt(Integer):

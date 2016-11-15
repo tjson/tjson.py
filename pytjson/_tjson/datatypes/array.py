@@ -1,4 +1,4 @@
-from lib._tjson.datatype import NonScalar, Datatype
+from pytjson._tjson.datatype import NonScalar, Datatype
 
 
 class Array(NonScalar):

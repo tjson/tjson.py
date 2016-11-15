@@ -1,6 +1,6 @@
 import re, datetime
 from Helpers.freezable_list import FrozenDict
-from lib.Exceptions import ParseError
+from pytjson.Exceptions import ParseError
 
 class Datatype:
     # Initializer, will be overriden below

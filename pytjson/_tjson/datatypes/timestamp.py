@@ -1,5 +1,5 @@
 from datetime import tzinfo, timedelta
-from lib._tjson.datatype import Scalar
+from pytjson._tjson.datatype import Scalar
 
 
 class Timestamp(Scalar):

@@ -1,6 +1,6 @@
 import base64
-from lib.Exceptions import ParseError
-from lib._tjson.datatype import Binary
+from pytjson.Exceptions import ParseError
+from pytjson._tjson.datatype import Binary
 
 
 class Binary16(Binary):
