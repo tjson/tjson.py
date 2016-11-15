@@ -34,7 +34,7 @@ The following describes how TJSON types map onto Python types during parsing:
  
  ### Generating
 
-To generate TJSON from Ruby objects, use the `TJSON.generate` method:
+To generate TJSON from Pytjon's objects, use the `generate()` method:
 
 ```python
 >> from pytjson.tjson import tjson
