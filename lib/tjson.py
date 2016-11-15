@@ -16,12 +16,15 @@ class tjson:
     def object_decoder(obj):
             newobject = tjson.object()
             for key, val in obj.iteritems():
+
                 if not tjson.re_name_check.match(key):
-                    raise ParseError("invalid tag: {}".format(key))
+                    raise ParseError("Invalid tag: {}".format(repr(name)))
 
                 name = tjson.re_name_check.match(key).group(1).encode("utf-8")
-                tag = tjson.re_name_check.match(key).group(2).encode("utf-8")
+                if name in newobject:
+                    raise ValueError("Duplicate key detected: %s" % repr(name))
 
+                tag = tjson.re_name_check.match(key).group(2).encode("utf-8")
                 the_type = Datatype.parse(tag)
                 newobject[name] = the_type.convert(val)
             return newobject
