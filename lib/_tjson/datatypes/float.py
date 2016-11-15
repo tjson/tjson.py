@@ -1,5 +1,6 @@
 from lib._tjson.datatype import Number
 
+
 class Float(Number):
     @staticmethod
     def tag():

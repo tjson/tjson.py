@@ -1,5 +1,4 @@
 import base64
-
 from lib.Exceptions import ParseError
 from lib._tjson.datatype import Binary
 

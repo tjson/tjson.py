@@ -1,5 +1,6 @@
 from lib._tjson.datatype import Scalar
 
+
 class String(Scalar):
     @staticmethod
     def tag():
@@ -20,5 +21,3 @@ class String(Scalar):
     @staticmethod
     def generate(obj):
         return str(obj).encode("utf-8")
-
-

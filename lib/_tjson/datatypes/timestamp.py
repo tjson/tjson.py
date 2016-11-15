@@ -2,8 +2,6 @@ from datetime import tzinfo, timedelta
 from lib._tjson.datatype import Scalar
 
 
-
-
 class Timestamp(Scalar):
     @staticmethod
     def tag():
@@ -30,4 +28,3 @@ class Timestamp(Scalar):
 
         def utcoffset(self, dt):
             return timedelta(0)
-

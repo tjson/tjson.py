@@ -1,5 +1,4 @@
 import sys
-
 from lib.Exceptions import ParseError
 from lib._tjson.datatype import Integer, Datatype
 
@@ -25,8 +24,6 @@ class SignedInt(Integer):
             raise ParseError, "undersized integer: {}".format(result)
 
         return result
-
-
 
 
 class UnsignedInt(Integer):

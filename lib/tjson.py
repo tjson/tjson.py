@@ -13,14 +13,9 @@ class tjson:
             super(tjson.object, self).__init__(**kwargs)
 
     def object_decoder(self, obj):
-            # print "--" , obj
-            tmp = tjson.object()
 
+            newobject = tjson.object()
             for key, val in obj.iteritems():
-
-                # if key is not "b:i" or key is not "example:A<O>":
-                #     return obj
-
                 if not tjson.re_name_check.match(key):
                     raise ParseError("invalid tag: {}".format(key))
 
@@ -28,10 +23,8 @@ class tjson:
                 tag = tjson.re_name_check.match(key).group(2).encode("utf-8")
 
                 the_type = Datatype.parse(tag)
-                # print "val : ",val, val[0].__class__
-                tmp[name] = the_type.convert(val)
-            # print tmp
-            return tmp
+                newobject[name] = the_type.convert(val)
+            return newobject
 
     def parse(self, string):
         try:
